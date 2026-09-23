@@ -12,6 +12,15 @@ from rest_framework_simplejwt.exceptions import TokenError
 
 from .serializers import RegisterSerializer
 
+from .serializers import RegisterSerializer, VerifyOTPSerializer
+
+from rest_framework import serializers
+
+
+from .utils import create_and_send_otp
+from .models import OTP
+from .serializers import RequestPasswordResetSerializer, ResetPasswordSerializer
+
 User = get_user_model()
 
 
@@ -21,6 +30,16 @@ class RegisterView(generics.CreateAPIView):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        if not self.user.is_verified:
+            raise serializers.ValidationError(
+                "Please verify your email before logging in."
+            )
+
+        return data
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -107,3 +126,60 @@ class LogoutView(APIView):
         response.delete_cookie('refresh_token')
 
         return response
+
+
+
+class VerifyOTPView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = VerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        otp = serializer.validated_data['otp']
+
+        user.is_verified = True
+        user.save()
+
+        otp.is_used = True
+        otp.save()
+
+        return Response({'detail': 'Email verified successfully.'}, status=200)
+
+
+
+
+class RequestPasswordResetView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = RequestPasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+        user = User.objects.get(email=email)
+
+        create_and_send_otp(user, OTP.Purpose.PASSWORD_RESET)
+
+        return Response({'detail': 'Password reset OTP sent to your email.'}, status=200)
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        otp = serializer.validated_data['otp']
+        new_password = serializer.validated_data['new_password']
+
+        user.set_password(new_password)
+        user.save()
+
+        otp.is_used = True
+        otp.save()
+
+        return Response({'detail': 'Password reset successfully.'}, status=200)
