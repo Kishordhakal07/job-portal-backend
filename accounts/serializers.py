@@ -94,3 +94,8 @@ class ResetPasswordSerializer(serializers.Serializer):
         attrs['user'] = user
         attrs['otp'] = otp
         return attrs
+
+
+class GoogleAuthSerializer(serializers.Serializer):
+    id_token = serializers.CharField()
+    role = serializers.ChoiceField(choices=User.Role.choices, required=False)

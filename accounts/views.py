@@ -21,6 +21,11 @@ from .utils import create_and_send_otp
 from .models import OTP
 from .serializers import RequestPasswordResetSerializer, ResetPasswordSerializer
 
+
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
+from .serializers import GoogleAuthSerializer
+
 User = get_user_model()
 
 
@@ -183,3 +188,59 @@ class ResetPasswordView(APIView):
         otp.save()
 
         return Response({'detail': 'Password reset successfully.'}, status=200)
+
+
+
+
+class GoogleAuthView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = GoogleAuthSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        token = serializer.validated_data['id_token']
+        role = serializer.validated_data.get('role')
+
+        try:
+            idinfo = google_id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
+            )
+        except ValueError:
+            return Response({'detail': 'Invalid Google token.'}, status=401)
+
+        email = idinfo.get('email')
+        email_verified = idinfo.get('email_verified')
+
+        if not email or not email_verified:
+            return Response({'detail': 'Google account email not verified.'}, status=401)
+
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'role': role or User.Role.JOB_SEEKER,
+                'is_verified': True,
+            }
+        )
+
+        if created:
+            user.set_unusable_password()
+            user.save()
+
+        refresh = CustomTokenObtainPairSerializer.get_token(user)
+        access_token = str(refresh.access_token)
+
+        response = Response({'access': access_token}, status=200)
+
+        response.set_cookie(
+            key='refresh_token',
+            value=str(refresh),
+            httponly=True,
+            secure=False,
+            samesite='Lax',
+            max_age=7 * 24 * 60 * 60,
+        )
+
+        return response
