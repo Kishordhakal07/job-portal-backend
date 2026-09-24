@@ -37,10 +37,14 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
+
     'rest_framework',
-    'accounts',
     'rest_framework_simplejwt.token_blacklist',
+    'accounts',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -166,4 +170,20 @@ MAILERS = {
 DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
 
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID')
+
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': config('CLOUDINARY_API_KEY'),
+    'API_SECRET': config('CLOUDINARY_API_SECRET'),
+}
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    },
+}
 

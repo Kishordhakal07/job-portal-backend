@@ -244,3 +244,19 @@ class GoogleAuthView(APIView):
         )
 
         return response
+
+
+from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
+from .permissions import IsJobSeeker
+from .serializers import JobSeekerProfileSerializer
+from .models import JobSeekerProfile
+
+
+class JobSeekerProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = JobSeekerProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsJobSeeker]
+    parser_classes = [MultiPartParser, FormParser,JSONParser]
+
+    def get_object(self):
+        profile, created = JobSeekerProfile.objects.get_or_create(user=self.request.user)
+        return profile

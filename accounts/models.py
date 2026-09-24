@@ -77,3 +77,23 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"OTP for {self.user.email} ({self.purpose})"
+
+
+
+class Skill(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class JobSeekerProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='job_seeker_profile')
+    bio = models.TextField(blank=True)
+    skills = models.ManyToManyField(Skill, blank=True, related_name='job_seekers')
+    cv = models.FileField(upload_to='cvs/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Profile of {self.user.email}"
