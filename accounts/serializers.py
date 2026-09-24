@@ -4,6 +4,7 @@ from .utils import create_and_send_otp
 from .models import OTP
 
 from .models import Skill, JobSeekerProfile
+from .models import CompanyProfile
 
 User = get_user_model()
 
@@ -142,3 +143,14 @@ class JobSeekerProfileSerializer(serializers.ModelSerializer):
             instance.skills.set(skill_objects)
 
         return instance
+
+
+
+
+class CompanyProfileSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = CompanyProfile
+        fields = ['id', 'email', 'company_name', 'description', 'website', 'logo', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']

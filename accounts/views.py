@@ -26,6 +26,18 @@ from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from .serializers import GoogleAuthSerializer
 
+
+
+from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
+from .permissions import IsJobSeeker
+from .serializers import JobSeekerProfileSerializer
+from .models import JobSeekerProfile
+
+
+from .permissions import IsCompany
+from .serializers import CompanyProfileSerializer
+from .models import CompanyProfile
+
 User = get_user_model()
 
 
@@ -259,4 +271,21 @@ class JobSeekerProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         profile, created = JobSeekerProfile.objects.get_or_create(user=self.request.user)
+        return profile
+
+from .permissions import IsCompany
+from .serializers import CompanyProfileSerializer
+from .models import CompanyProfile
+
+
+class CompanyProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = CompanyProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCompany]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_object(self):
+        profile, created = CompanyProfile.objects.get_or_create(
+            user=self.request.user,
+            defaults={'company_name': self.request.user.email}
+        )
         return profile

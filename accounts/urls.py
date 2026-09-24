@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     RegisterView, LoginView, RefreshView, LogoutView,
-    VerifyOTPView, RequestPasswordResetView, ResetPasswordView,GoogleAuthView,JobSeekerProfileView
+    VerifyOTPView, RequestPasswordResetView, ResetPasswordView,GoogleAuthView,JobSeekerProfileView,CompanyProfileView,
 )
 
 urlpatterns = [
@@ -14,4 +14,5 @@ urlpatterns = [
     path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
      path('google/', GoogleAuthView.as_view(), name='google-auth'),
      path('profile/job-seeker/', JobSeekerProfileView.as_view(), name='job-seeker-profile'),
+      path('profile/company/', CompanyProfileView.as_view(), name='company-profile'),
 ]
